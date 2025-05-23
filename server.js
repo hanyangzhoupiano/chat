@@ -48,9 +48,7 @@ wss.on('connection', ws => {
                     let commandName = args.shift().substring(1);
         
                     if (commands[commandName] && args.length >= commands[commandName].length) {
-                        let command = commands[commandName](...args);
-    
-                        command();
+                        commands[commandName](...args);
                     };
                 };
             };
