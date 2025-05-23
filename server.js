@@ -9,6 +9,10 @@ const server = app.listen(process.env.PORT || 8080, () => {
 const wss = new WebSocket.Server({ server });
 
 wss.on('connection', ws => {
+    ws.send(JSON.stringify({
+        username: "Server",
+        message: "Welcome to the chatroom!"
+    }));
     ws.on('message', message => {
         try {
             let data = JSON.parse(message);
