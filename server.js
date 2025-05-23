@@ -19,17 +19,25 @@ wss.on('connection', ws => {
             let commands = {
                 "say": function(message) {
                     if (message) {
-                        ws.send(JSON.stringify({
-                            username: "System",
-                            message: message
-                        }));
+                        wss.clients.forEach(client => {
+                            if (client.readyState === WebSocket.OPEN) {
+                                client.send(JSON.stringify({
+                                    username: "System",
+                                    message: message
+                                }));
+                            };
+                        });
                     };
                 },
                 "random": function() {
-                    ws.send(JSON.stringify({
-                        username: "System",
-                        message: "Generated a random integer from 1 to 100: " + Math.floor(Math.random() * 99 + 1)
-                    }));
+                    wss.clients.forEach(client => {
+                        if (client.readyState === WebSocket.OPEN) {
+                            client.send(JSON.stringify({
+                                username: "System",
+                                message: "Generated a random integer from 1 to 100: " + Math.floor(Math.random() * 99 + 1)
+                            }));
+                        };
+                    });
                 }
             };
 
