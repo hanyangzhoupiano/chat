@@ -10,8 +10,22 @@ const wss = new WebSocket.Server({ server });
 
 wss.on('connection', ws => {
     ws.on('message', message => {
-        console.log(`Received: ${message}`);
-        ws.send(`Echo: ${message}`);
+        try {
+            let data = JSON.parse(message);
+
+            if (data.username && data.message) {
+                wss.clients.forEach(client => {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(JSON.stringify({
+                            "username": data.username,
+                            "message": data.message
+                        }));
+                    };
+                });
+            };
+        } catch (error) {
+            console.warn("Error: " + error);
+        };
     });
 });
 
