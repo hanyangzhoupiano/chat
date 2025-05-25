@@ -52,12 +52,7 @@ wss.on('connection', ws => {
                                 "username": data.username,
                                 "action": "send",
                                 "message": data.message || "",
-                                "time": data.time || new Date().toLocaleTimeString("en-US", {
-                                    hour: "2-digit",
-                                    minute: "2-digit",
-                                    hour12: true,
-                                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
-                                }),
+                                "time": data.time || "",
                                 "tags": data.tags || JSON.stringify([])
                             }));
                         };
