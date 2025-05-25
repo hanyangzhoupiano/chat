@@ -22,8 +22,9 @@ wss.on('connection', ws => {
                         wss.clients.forEach(client => {
                             if (client.readyState === WebSocket.OPEN) {
                                 client.send(JSON.stringify({
-                                    username: "System",
-                                    message: message
+                                    "username": "System",
+                                    "action": "send",
+                                    "message": message
                                 }));
                             };
                         });
@@ -31,33 +32,53 @@ wss.on('connection', ws => {
                 },
                 "random": function() {
                     wss.clients.forEach(client => {
-                        if (client.readyState === WebSocket.OPEN) {
+                        if (client.readyState === WebSocket.OPEN && data.message && data.time && data.tags) {
                             client.send(JSON.stringify({
-                                username: "System",
-                                message: "Generated a random integer from 1 to 100: " + Math.floor(Math.random() * 99 + 1)
+                                "username": "System",
+                                "action": "send",
+                                "message": "Generated a random integer from 1 to 100: " + Math.floor(Math.random() * 99 + 1)
                             }));
                         };
                     });
                 }
             };
 
-            if (data.username && data.message) {
-                wss.clients.forEach(client => {
-                    if (client.readyState === WebSocket.OPEN) {
-                        client.send(JSON.stringify({
-                            "username": data.username,
-                            "message": data.message
-                        }));
-                    };
-                });
-
-                if (data.message[0] == "/") {
-                    let args = data.message.split(" ");
-                    let commandName = args.shift().substring(1);
-        
-                    if (commands[commandName] && args.length >= commands[commandName].length) {
-                        commands[commandName](...args);
-                    };
+            if (data.username && data.action) {
+                if (data.action == "send") {
+                    wss.clients.forEach(client => {
+                        if (client.readyState === WebSocket.OPEN) {
+                            client.send(JSON.stringify({
+                                "username": data.username,
+                                "action": "send",
+                                "message": data.message || "",
+                                "time": data.time || new Date().toLocaleTimeString("en-US", {
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                    hour12: true,
+                                    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone
+                                }),
+                                "tags": data.tags || JSON.stringify([])
+                            }));
+                        };
+                    });
+    
+                    if (data.message.startsWith("/")) {
+                        let args = data.message.split(" ");
+                        let commandName = args.shift().substring(1);
+                    
+                        if (commands[commandName]) {
+                            let expectedArgs = commands[commandName].length;
+                    
+                            if (args.length > expectedArgs) {
+                                args = [
+                                    ...args.slice(0, expectedArgs - 1),
+                                    args.slice(expectedArgs - 1).join(" ")
+                                ];
+                            }
+                    
+                            commands[commandName](...args);
+                        }
+                    }
                 };
             };
         } catch (error) {
