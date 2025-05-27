@@ -59,7 +59,7 @@ wss.on('connection', ws => {
                     // Rate Limiting
 
                     if (!request_limits.has(ws.clientId)) {
-                        request_limits.set(ws.clientId, { requests: [], warn: false });
+                        request_limits.set(ws.clientId, {requests: [], warn: false});
                     }
                     
                     let now = Date.now();
@@ -115,7 +115,14 @@ wss.on('connection', ws => {
                                 "tags": JSON.stringify(["error"])
                             });
                         };
-                    } catch (e) {};
+                    } catch (e) {
+                        ws.send(JSON.stringify({
+                            "username": "System",
+                            "action": "send",
+                            "message": "Invalid credidentials.",
+                            "tags": JSON.stringify(["error"])
+                        });
+                    };
     
                     if (data.message.startsWith("/")) {
                         let args = data.message.split(" ");
@@ -129,7 +136,7 @@ wss.on('connection', ws => {
                                     ...args.slice(0, expectedArgs - 1),
                                     args.slice(expectedArgs - 1).join(" ")
                                 ];
-                            }
+                            };
                     
                             commands[commandName](...args);
                         };
