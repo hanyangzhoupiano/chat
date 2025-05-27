@@ -21,7 +21,7 @@ const configuration = {
     }
 };
 
-const request = new Map(); 
+const request_limits = new Map(); 
 
 wss.on('connection', ws => {
     ws.on('message', message => {
