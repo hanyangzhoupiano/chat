@@ -113,7 +113,7 @@ wss.on('connection', ws => {
                                 "action": "send",
                                 "message": "Invalid credidentials.",
                                 "tags": JSON.stringify(["error"])
-                            });
+                            }));
                         };
                     } catch (e) {
                         ws.send(JSON.stringify({
@@ -121,7 +121,7 @@ wss.on('connection', ws => {
                             "action": "send",
                             "message": "Invalid credidentials.",
                             "tags": JSON.stringify(["error"])
-                        });
+                        }));
                     };
     
                     if (data.message.startsWith("/")) {
