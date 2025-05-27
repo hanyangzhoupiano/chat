@@ -6,7 +6,22 @@ const server = app.listen(process.env.PORT || 8080, () => {
     console.log(`Server running on port ${server.address().port}`);
 });
 
-const wss = new WebSocket.Server({ server });
+const wss = new WebSocket.Server({server});
+
+const accounts = [
+    {username: "hanyangzhou", password: "hz092012"},
+    {username: "Kage_Umbra", password: "DonLorenzoSigma8812"},
+    {username: "guest", password: "1234"}
+];
+
+const configuration = {
+    rate_limits: {
+        time: 1000,
+        requests: 5
+    }
+};
+
+const request = new Map(); 
 
 wss.on('connection', ws => {
     ws.on('message', message => {
@@ -41,17 +56,66 @@ wss.on('connection', ws => {
 
             if (data.username && data.action) {
                 if (data.action == "send") {
-                    wss.clients.forEach(client => {
-                        if (client.readyState === WebSocket.OPEN) {
-                            client.send(JSON.stringify({
-                                "username": data.username,
+                    // Rate Limiting
+
+                    if (!request_limits.has(ws.clientId)) {
+                        request_limits.set(ws.clientId, { requests: [], warn: false });
+                    }
+                    
+                    let now = Date.now();
+                    let limits = request_limits.get(ws.clientId);
+                    let timestamps = limits.requests;
+                    let warned = limits.warn;
+                    
+                    timestamps.push(now);
+                    timestamps = timestamps.filter(timestamp => now - timestamp < configuration.rate_limits.time);
+                    
+                    limits.requests = timestamps;
+                    
+                    if (timestamps.length > configuration.rate_limits.requests) {
+                        if (!warned) {
+                            ws.send(JSON.stringify({
+                                "username": "System",
                                 "action": "send",
-                                "message": data.message || "",
-                                "time": data.time || "",
-                                "tags": data.tags || JSON.stringify([])
+                                "message": "You are currently being rate-limited.",
+                                "tags": JSON.stringify(["error"])
                             }));
+                    
+                            limits.warn = true;
+                            request_limits.set(ws.clientId, limits);
+                    
+                            setTimeout(() => {
+                                limits.warn = false;
+                                request_limits.set(ws.clientId, limits);
+                            }, 5000);
+                        }
+                        return;
+                    }
+
+                    // Message Logic
+                    
+                    try {
+                        if (accounts.some(account => account.username === data.key.split("/") && account.password === password)) {
+                            wss.clients.forEach(client => {
+                                if (client.readyState === WebSocket.OPEN) {
+                                    client.send(JSON.stringify({
+                                        "username": data.username,
+                                        "action": "send",
+                                        "message": data.message || "",
+                                        "time": data.time || "",
+                                        "tags": data.tags || JSON.stringify([])
+                                    }));
+                                };
+                            });
+                        } else {
+                            ws.send(JSON.stringify({
+                                "username": "System",
+                                "action": "send",
+                                "message": "Invalid credidentials.",
+                                "tags": JSON.stringify(["error"])
+                            });
                         };
-                    });
+                    } catch (e) {};
     
                     if (data.message.startsWith("/")) {
                         let args = data.message.split(" ");
@@ -68,8 +132,8 @@ wss.on('connection', ws => {
                             }
                     
                             commands[commandName](...args);
-                        }
-                    }
+                        };
+                    };
                 };
             };
         } catch (error) {
