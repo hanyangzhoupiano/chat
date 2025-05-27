@@ -95,7 +95,8 @@ wss.on('connection', ws => {
                     // Message Logic
                     
                     try {
-                        if (accounts.some(account => account.username === data.key.split("/") && account.password === password)) {
+                        let [username, password] = data.key.split("/");
+                        if (accounts.some(account => account.username === username && account.password === password)) {
                             wss.clients.forEach(client => {
                                 if (client.readyState === WebSocket.OPEN) {
                                     client.send(JSON.stringify({
