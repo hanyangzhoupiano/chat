@@ -9,9 +9,9 @@ const server = app.listen(process.env.PORT || 8080, () => {
 const wss = new WebSocket.Server({server});
 
 const accounts = [
-    {username: "hanyangzhou", password: "hz092012"},
-    {username: "Kage_Umbra", password: "DonLorenzoSigma8812"},
-    {username: "guest", password: "1234"}
+    {username: "hanyangzhou", password: "hz092012", id: 52792642},
+    {username: "Kage_Umbra", password: "DonLorenzoSigma8812", id: 65712075},
+    {username: "guest", password: "1234", id: 59246716}
 ];
 
 const configuration = {
