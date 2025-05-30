@@ -109,7 +109,7 @@ wss.on('connection', ws => {
                     
                     try {
                         let [username, password] = data.key.split("/");
-                        if (accounts.some(account => account.username === username && account.password === password)) {
+                        if ([...accounts].some(account => account.username === username && account.password === password)) {
                             wss.clients.forEach(client => {
                                 if (client.readyState === WebSocket.OPEN) {
                                     client.send(JSON.stringify({
