@@ -133,7 +133,7 @@ wss.on('connection', ws => {
                         ws.send(JSON.stringify({
                             "username": "System",
                             "action": "send",
-                            "message": "Invalid credidentials.",
+                            "message": "Invalid credidentials: " + e,
                             "tags": JSON.stringify(["error"])
                         }));
                     };
