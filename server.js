@@ -8,16 +8,26 @@ const server = app.listen(process.env.PORT || 8080, () => {
 
 const wss = new WebSocket.Server({server});
 
-const accounts = [
-    {username: "hanyangzhou", password: "hz092012", id: 52792642},
-    {username: "Kage_Umbra", password: "DonLorenzoSigma8812", id: 65712075},
-    {username: "guest", password: "1234", id: 59246716}
-];
+const accounts = new Set([
+    {username: "hanyangzhou", password: "hz092012", perms: 4, id: 1},
+    {username: "arjunjain", password: "aj090612", perms: 0, id: 2},
+    {username: "Kage_Umbra", password: "DonLorenzoSigma8812", perms: 0, id: 3},
+    {username: "guest", password: "1234", perms: 0, id: 4}
+]);
+const roles = {
+    0: "Default",
+    1: "Moderator" , /* Manage Messages, Mute */
+    2: "Senior Moderator", /* Manage Messages, Mute, Kick, Ban */
+    3: "Administrator", /* Manage Messages, Manage Roles, Mute, Kick, Ban */
+    4: "Owner" /* All Permissions */
+};
+const muted_users = new Set();
+const banned_users = new Set();
 
 const configuration = {
     rate_limits: {
-        time: 1000,
-        requests: 5
+        time: 500,
+        requests: 3
     }
 };
 
@@ -88,7 +98,7 @@ wss.on('connection', ws => {
                                 limits.warn = false;
                                 request_limits.set(ws.clientId, limits);
                             }, 5000);
-                        }
+                        };
                         return;
                     }
 
