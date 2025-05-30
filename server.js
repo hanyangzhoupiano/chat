@@ -21,8 +21,11 @@ const roles = {
     3: "Administrator", /* Manage Messages, Manage Roles, Mute, Kick, Ban */
     4: "Owner" /* All Permissions */
 };
+const online_members = new Set();
 const muted_users = new Set();
 const banned_users = new Set();
+
+// add typing messages
 
 const configuration = {
     rate_limits: {
