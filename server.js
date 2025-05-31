@@ -8,11 +8,11 @@ const server = app.listen(process.env.PORT || 8080, () => {
 
 const wss = new WebSocket.Server({server});
 
-const accounts = new Set([
-    {username: "hanyangzhou", password: "hz092012", perms: 4, id: 1},
-    {username: "arjunjain", password: "aj090612", perms: 0, id: 2},
-    {username: "Kage_Umbra", password: "DonLorenzoSigma8812", perms: 0, id: 3},
-    {username: "guest", password: "1234", perms: 0, id: 4}
+const accounts = new Map([
+    [1, {username: "hanyangzhou", password: "hz092012", perms: 4}],
+    [2, {username: "arjunjain", password: "aj090612", perms: 0}],
+    [3, {username: "Kage_Umbra", password: "DonLorenzoSigma8812", perms: 0}],
+    [4, {username: "guest", password: "1234", perms: 0}]
 ]);
 const roles = {
     0: "Default",
@@ -41,75 +41,95 @@ wss.on('connection', ws => {
         try {
             let data = JSON.parse(message);
             let commands = {
-                "say": function(message) {
-                    if (message) {
-                        wss.clients.forEach(client => {
-                            if (client.readyState === WebSocket.OPEN) {
-                                client.send(JSON.stringify({
-                                    "username": "System",
-                                    "action": "send",
-                                    "message": message
-                                }));
-                            };
-                        });
-                    };
-                },
-                "random": function() {
-                    wss.clients.forEach(client => {
-                        if (client.readyState === WebSocket.OPEN && data.message && data.time && data.tags) {
-                            client.send(JSON.stringify({
-                                "username": "System",
-                                "action": "send",
-                                "message": "Generated a random integer from 1 to 100: " + Math.floor(Math.random() * 99 + 1)
-                            }));
+                "say": {
+                    callback: function(message) {
+                        if (message) {
+                            wss.clients.forEach(client => {
+                                if (client.readyState === WebSocket.OPEN) {
+                                    client.send(JSON.stringify({
+                                        "username": "System",
+                                        "action": "send",
+                                        "message": message
+                                    }));
+                                };
+                            });
                         };
-                    });
+                    },
+                    permission_level: 1
                 }
             };
 
             if (data.username && data.action) {
-                if (data.action == "send") {
-                    // Rate Limiting
+                // Rate Limiting
 
-                    if (!request_limits.has(ws.clientId)) {
-                        request_limits.set(ws.clientId, {requests: [], warn: false});
-                    }
-                    
-                    let now = Date.now();
-                    let limits = request_limits.get(ws.clientId);
-                    let timestamps = limits.requests;
-                    let warned = limits.warn;
-                    
-                    timestamps.push(now);
-                    timestamps = timestamps.filter(timestamp => now - timestamp < configuration.rate_limits.time);
-                    
-                    limits.requests = timestamps;
-                    
-                    if (timestamps.length > configuration.rate_limits.requests) {
-                        if (!warned) {
-                            ws.send(JSON.stringify({
-                                "username": "System",
-                                "action": "send",
-                                "message": "You are currently being rate-limited.",
-                                "tags": JSON.stringify(["error"])
-                            }));
-                    
-                            limits.warn = true;
+                if (!request_limits.has(ws.clientId)) {
+                    request_limits.set(ws.clientId, {requests: [], warn: false});
+                }
+                
+                let now = Date.now();
+                let limits = request_limits.get(ws.clientId);
+                let timestamps = limits.requests;
+                let warned = limits.warn;
+                
+                timestamps.push(now);
+                timestamps = timestamps.filter(timestamp => now - timestamp < configuration.rate_limits.time);
+                
+                limits.requests = timestamps;
+                
+                if (timestamps.length > configuration.rate_limits.requests) {
+                    if (!warned) {
+                        ws.send(JSON.stringify({
+                            "username": "System",
+                            "action": "send",
+                            "message": "You are currently being rate-limited.",
+                            "tags": JSON.stringify(["error"])
+                        }));
+                
+                        limits.warn = true;
+                        request_limits.set(ws.clientId, limits);
+                
+                        setTimeout(() => {
+                            limits.warn = false;
                             request_limits.set(ws.clientId, limits);
-                    
-                            setTimeout(() => {
-                                limits.warn = false;
-                                request_limits.set(ws.clientId, limits);
-                            }, 5000);
-                        };
-                        return;
-                    }
-
+                        }, 5000);
+                    };
+                    return;
+                }
+                if (data.action == "send") {
                     // Message Logic
                     
                     try {
                         let [username, password] = data.key.split("/");
-                        if ([...accounts].some(account => account.username === username && account.password === password)) {
+                        let account = [...accounts.values()].find(account => account.username === username && account.password === password);
+                        if (account) {
+                            if (data.message.startsWith("/")) {
+                                let arguments = data.message.split(" ");
+                                let command_name = args.shift().substring(1);
+                                let command = commands[command_name];
+                            
+                                if (command) {
+                                    let permission_level = command.permission_level;
+                                    let expected_arguments = command.callback.length;
+                            
+                                    if (arguments.length > expected_arguments) {
+                                        arguments = [
+                                            ...arguments.slice(0, expectedArgs - 1),
+                                            arguments.slice(expectedArgs - 1).join(" ")
+                                        ];
+                                    };
+
+                                    if (account.permission_level >= permission_level) {
+                                        command(...arguments);
+                                    } else {
+                                        ws.send(JSON.stringify({
+                                            "username": "System",
+                                            "action": "send",
+                                            "message": "Insufficient permissions.",
+                                            "tags": JSON.stringify(["error"])
+                                        }));
+                                    };
+                                };
+                            };
                             wss.clients.forEach(client => {
                                 if (client.readyState === WebSocket.OPEN) {
                                     client.send(JSON.stringify({
@@ -128,6 +148,7 @@ wss.on('connection', ws => {
                                 "message": "Invalid credidentials.",
                                 "tags": JSON.stringify(["error"])
                             }));
+                            ws.close();
                         };
                     } catch (e) {
                         ws.send(JSON.stringify({
@@ -136,29 +157,15 @@ wss.on('connection', ws => {
                             "message": "Invalid credidentials: " + e,
                             "tags": JSON.stringify(["error"])
                         }));
-                    };
-    
-                    if (data.message.startsWith("/")) {
-                        let args = data.message.split(" ");
-                        let commandName = args.shift().substring(1);
-                    
-                        if (commands[commandName]) {
-                            let expectedArgs = commands[commandName].length;
-                    
-                            if (args.length > expectedArgs) {
-                                args = [
-                                    ...args.slice(0, expectedArgs - 1),
-                                    args.slice(expectedArgs - 1).join(" ")
-                                ];
-                            };
-                    
-                            commands[commandName](...args);
-                        };
+                        ws.close();
                     };
                 };
+            } else {
+                return;
             };
         } catch (error) {
             console.warn("Error: " + error);
+            return;
         };
     });
 });
