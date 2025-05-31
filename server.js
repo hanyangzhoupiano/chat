@@ -56,6 +56,48 @@ wss.on('connection', ws => {
                         };
                     },
                     permission_level: 1
+                },
+                "ban": {
+                    callback: function() {
+                        wss.clients.forEach(client => {
+                            if (client.readyState === WebSocket.OPEN) {
+                                client.send(JSON.stringify({
+                                    "username": "System",
+                                    "action": "send",
+                                    "message": "banning coming soon"
+                                }));
+                            };
+                        });
+                    },
+                    permission_level: 1
+                },
+                "unban": {
+                    callback: function() {
+                        wss.clients.forEach(client => {
+                            if (client.readyState === WebSocket.OPEN) {
+                                client.send(JSON.stringify({
+                                    "username": "System",
+                                    "action": "send",
+                                    "message": "unbanning coming soon"
+                                }));
+                            };
+                        });
+                    },
+                    permission_level: 1
+                },
+                "mute": {
+                    callback: function() {
+                        wss.clients.forEach(client => {
+                            if (client.readyState === WebSocket.OPEN) {
+                                client.send(JSON.stringify({
+                                    "username": "System",
+                                    "action": "send",
+                                    "message": "muting coming soon"
+                                }));
+                            };
+                        });
+                    },
+                    permission_level: 1
                 }
             };
 
