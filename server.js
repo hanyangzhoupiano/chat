@@ -144,62 +144,62 @@ wss.on('connection', ws => {
                     let account = [...accounts.values()].find(account => account.username === username && account.password === password);
                     if (account) {
                         switch (data.action) {
-                        case "send":
-                            // Message Logic
-
-                            if (data.message.startsWith("/")) {
-                                let arguments = data.message.split(" ");
-                                let command_name = args.shift().substring(1);
-                                let command = commands[command_name];
-
-                                if (command) {
-                                    let permission_level = command.permission_level;
-                                    let expected_arguments = command.callback.length;
-
-                                    if (arguments.length > expected_arguments) {
-                                        arguments = [
-                                            ...arguments.slice(0, expectedArgs - 1),
-                                            arguments.slice(expectedArgs - 1).join(" ")
-                                        ];
+                            case "send":
+                                // Message Logic
+    
+                                if (data.message.startsWith("/")) {
+                                    let arguments = data.message.split(" ");
+                                    let command_name = args.shift().substring(1);
+                                    let command = commands[command_name];
+    
+                                    if (command) {
+                                        let permission_level = command.permission_level;
+                                        let expected_arguments = command.callback.length;
+    
+                                        if (arguments.length > expected_arguments) {
+                                            arguments = [
+                                                ...arguments.slice(0, expectedArgs - 1),
+                                                arguments.slice(expectedArgs - 1).join(" ")
+                                            ];
+                                        }
+    
+                                        if (account.permission_level >= permission_level) {
+                                            command(...arguments);
+                                        } else {
+                                            ws.send(JSON.stringify({
+                                                "username": "System",
+                                                "action": "send",
+                                                "message": "Insufficient permissions.",
+                                                "tags": JSON.stringify(["error"])
+                                            }));
+                                        }
                                     }
-
-                                    if (account.permission_level >= permission_level) {
-                                        command(...arguments);
-                                    } else {
-                                        ws.send(JSON.stringify({
-                                            "username": "System",
+                                }
+                                wss.clients.forEach(client => {
+                                    if (client.readyState === WebSocket.OPEN) {
+                                        client.send(JSON.stringify({
+                                            "username": data.username,
                                             "action": "send",
-                                            "message": "Insufficient permissions.",
-                                            "tags": JSON.stringify(["error"])
+                                            "message": data.message || "",
+                                            "time": data.time || "",
+                                            "tags": data.tags || JSON.stringify([])
                                         }));
                                     }
-                                }
-                            }
-                            wss.clients.forEach(client => {
-                                if (client.readyState === WebSocket.OPEN) {
-                                    client.send(JSON.stringify({
-                                        "username": data.username,
-                                        "action": "send",
-                                        "message": data.message || "",
-                                        "time": data.time || "",
-                                        "tags": data.tags || JSON.stringify([])
-                                    }));
-                                }
-                            });
-                            break;
-                        case "update":
-                            wss.clients.forEach(client => {
-                                if (client.readyState === WebSocket.OPEN) {
-                                    client.send(JSON.stringify({
-                                        "username": data.username,
-                                        "action": "update",
-                                        "tags": data.tags || JSON.stringify([])
-                                    }));
-                                }
-                            });
-                            break;
-                        default:
-                            return;
+                                });
+                                break;
+                            case "update":
+                                wss.clients.forEach(client => {
+                                    if (client.readyState === WebSocket.OPEN) {
+                                        client.send(JSON.stringify({
+                                            "username": data.username,
+                                            "action": "update",
+                                            "tags": data.tags || JSON.stringify([])
+                                        }));
+                                    }
+                                });
+                                break;
+                            default:
+                                return;
                         }
                     } else {
                         ws.send(JSON.stringify({
