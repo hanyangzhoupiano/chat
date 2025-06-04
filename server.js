@@ -149,7 +149,7 @@ wss.on('connection', ws => {
     
                                 if (data.message.startsWith("/")) {
                                     let arguments = data.message.split(" ");
-                                    let command_name = args.shift().substring(1);
+                                    let command_name = arguments.shift().substring(1);
                                     let command = commands[command_name];
     
                                     if (command) {
@@ -158,8 +158,8 @@ wss.on('connection', ws => {
     
                                         if (arguments.length > expected_arguments) {
                                             arguments = [
-                                                ...arguments.slice(0, expectedArgs - 1),
-                                                arguments.slice(expectedArgs - 1).join(" ")
+                                                ...arguments.slice(0, expected_arguments - 1),
+                                                arguments.slice(expected_arguments - 1).join(" ")
                                             ];
                                         }
     
