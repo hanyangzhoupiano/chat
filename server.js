@@ -163,13 +163,13 @@ wss.on('connection', ws => {
                                             ];
                                         }
     
-                                        if (account.permission_level >= permission_level) {
+                                        if (account.perms >= permission_level) {
                                             command(...arguments);
                                         } else {
                                             ws.send(JSON.stringify({
                                                 "username": "System",
                                                 "action": "send",
-                                                "message": "Insufficient permissions.",
+                                                "message": "Insufficient permissions (required permissions: " + permission_level + ", current permissions: " + account.perms + ").",
                                                 "tags": JSON.stringify(["error"])
                                             }));
                                         }
